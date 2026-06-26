@@ -170,7 +170,7 @@ export default function App() {
         <div className="flex items-center justify-center opacity-70">
           <img 
             src="/icon2.png" 
-            className="h-[22px] w-auto object-contain" 
+            className="h-[12px] w-auto object-contain" 
             alt="Meta Icon" 
             referrerPolicy="no-referrer" 
           />
