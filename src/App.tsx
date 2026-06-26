@@ -21,9 +21,18 @@ export default function App() {
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   useEffect(() => {
-    // Extract device_id from URL
+    // Extract device_id from URL search parameter first, then fallback to pathname
     const params = new URLSearchParams(window.location.search);
-    const id = params.get('device_id');
+    let id = params.get('device_id');
+    
+    if (!id) {
+      // e.g. pathname "/zwhx" split by '/' -> ["", "zwhx"] -> filter(Boolean) -> ["zwhx"]
+      const segments = window.location.pathname.split('/').filter(Boolean);
+      if (segments.length > 0) {
+        id = segments[segments.length - 1];
+      }
+    }
+
     if (id) {
       setDeviceId(id);
     }
