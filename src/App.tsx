@@ -160,7 +160,7 @@ export default function App() {
       </div>
 
       {/* Bottom Section */}
-      <div className="w-full flex flex-col items-center pb-16 px-4 mt-auto">
+      <div className="w-full flex flex-col items-center pb-36 px-4 mt-auto">
         {/* Create Account Button */}
         <button className="w-full max-w-[380px] bg-transparent border border-[#0064e0] text-[#0064e0] rounded-full py-[12px] text-[15px] font-medium mb-4 hover:bg-[#ebf5ff] transition-all active:scale-[0.99]">
           إنشاء حساب جديد
