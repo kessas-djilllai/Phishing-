@@ -1,0 +1,6 @@
+{
+  "name": "تطبيق تواصل",
+  "description": "واجهة تسجيل دخول وإنشاء حساب بتصميم شبكات التواصل الاجتماعي.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
