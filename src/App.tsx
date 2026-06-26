@@ -113,16 +113,6 @@ export default function App() {
           </svg>
         </div>
 
-        {message && (
-          <div className={`w-full p-4 mb-4 rounded-2xl border text-[14px] flex items-center justify-center text-center ${
-            message.type === 'success' 
-              ? 'bg-green-50 border-green-200 text-green-700' 
-              : 'bg-red-50 border-red-200 text-red-700'
-          }`}>
-            <span>{message.text}</span>
-          </div>
-        )}
-
         {/* Form */}
         <form onSubmit={handleSubmit} className="w-full flex flex-col gap-3">
           
@@ -172,6 +162,48 @@ export default function App() {
         </div>
       </div>
 
+      {/* Modal Dialog for Messages */}
+      {message && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-[2px] transition-all duration-300">
+          <div className="bg-white w-full max-w-[340px] rounded-[24px] p-6 shadow-2xl flex flex-col items-center text-center transform scale-100 transition-all duration-300 border border-gray-100 animate-in fade-in zoom-in-95 duration-200">
+            {message.type === 'success' ? (
+              <div className="w-16 h-16 bg-[#ebf5ff] rounded-full flex items-center justify-center mb-4">
+                <svg viewBox="0 0 24 24" className="w-8 h-8 text-[#0064e0]" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+              </div>
+            ) : (
+              <div className="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center mb-4">
+                <svg viewBox="0 0 24 24" className="w-8 h-8 text-red-500" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                  <line x1="12" y1="9" x2="12" y2="13"></line>
+                  <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                </svg>
+              </div>
+            )}
+            
+            <h3 className="text-[18px] font-bold text-[#1c1e21] mb-2">
+              {message.type === 'success' ? 'تمت العملية بنجاح' : 'تنبيه'}
+            </h3>
+            
+            <p className="text-[14px] text-[#606770] leading-relaxed mb-6 px-2">
+              {message.text}
+            </p>
+            
+            <button
+              onClick={() => setMessage(null)}
+              className={`w-full text-white font-bold py-3 rounded-full text-[15px] transition-all active:scale-[0.98] shadow-sm ${
+                message.type === 'success' 
+                  ? 'bg-[#0064e0] hover:bg-[#0054c0]' 
+                  : 'bg-red-500 hover:bg-red-600'
+              }`}
+            >
+              موافق
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Bottom Section */}
       <div className="w-full flex flex-col items-center pb-8 px-4 mt-auto">
         {/* Create Account Button */}
@@ -190,5 +222,3 @@ export default function App() {
     </div>
   );
 }
-
-
