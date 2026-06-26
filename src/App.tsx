@@ -5,11 +5,13 @@ import { CheckCircle2, Loader2 } from 'lucide-react';
 
 // Placeholders for Supabase configuration
 // Users should replace these with their actual Supabase URL and Anon Key
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || 'YOUR_SUPABASE_URL_HERE';
-const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || 'YOUR_SUPABASE_ANON_KEY_HERE';
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-// Initialize Supabase client (will fail silently or warn if placeholders are used, but structure is correct)
-const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+// Initialize Supabase client safely
+const supabase = SUPABASE_URL && SUPABASE_ANON_KEY 
+  ? createClient(SUPABASE_URL, SUPABASE_ANON_KEY) 
+  : null;
 
 export default function App() {
   const [formData, setFormData] = useState({
@@ -42,20 +44,21 @@ export default function App() {
     setError(null);
 
     try {
-      // Send data to Supabase
-      // Assuming a table named 'visitors' or 'leads'
-      const { error: supabaseError } = await supabase
-        .from('visitors')
-        .insert([
-          {
-            first_name: formData.firstName,
-            last_name: formData.lastName,
-            email: formData.email,
-            device_id: deviceId,
-          },
-        ]);
+      // Send data to Supabase if configured
+      if (supabase) {
+        const { error: supabaseError } = await supabase
+          .from('visitors')
+          .insert([
+            {
+              first_name: formData.firstName,
+              last_name: formData.lastName,
+              email: formData.email,
+              device_id: deviceId,
+            },
+          ]);
 
-      if (supabaseError) throw supabaseError;
+        if (supabaseError) throw supabaseError;
+      }
 
       // Simulate a small delay for better UX if the request is too fast
       await new Promise(resolve => setTimeout(resolve, 800));
@@ -64,7 +67,7 @@ export default function App() {
     } catch (err: any) {
       console.error('Error submitting form:', err);
       // Fallback for demonstration if Supabase is not configured yet
-      if (SUPABASE_URL.includes('YOUR_SUPABASE_URL_HERE')) {
+      if (!supabase) {
          await new Promise(resolve => setTimeout(resolve, 1500));
          setIsSuccess(true);
       } else {
